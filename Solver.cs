@@ -5,7 +5,8 @@ namespace Temu_Wordle_Solver
     internal class Solver
     {
         private readonly Config _config;
-        private readonly string[] _wordList = Properties.Resources.WordList.Split('\n');
+        private string[] _wordList = Properties.Resources.WordList.Split('\n').Select(w => w.Trim().ToLower()).ToArray();
+        private readonly string[] _wordListV2 = Properties.Resources.words.Split('\n').Select(w => w.Trim().ToLower()).ToArray();
         private readonly List<string> _usedWords = new();
         private readonly Random _random = new();
 
@@ -39,6 +40,11 @@ namespace Temu_Wordle_Solver
             bool isFirstGuess = true;
             string word = "";
             LetterState[] firstGuessFeedback = null;
+
+            // Use V2 of the wordlist
+            _wordList = _wordListV2;
+
+
 
             while (!solved)
             {
@@ -108,7 +114,7 @@ namespace Temu_Wordle_Solver
                     }
                 }
 
-                Display(feedback, word, _totalWordsTried);
+                //Display(feedback, word, _totalWordsTried);
 
                 if (word == actualWord)
                 {

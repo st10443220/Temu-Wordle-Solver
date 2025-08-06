@@ -141,5 +141,87 @@ namespace Temu_Wordle_Solver.Properties {
                 return ResourceManager.GetString("WordList", resourceCulture);
             }
         }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to which
+        ///there
+        ///their
+        ///about
+        ///would
+        ///these
+        ///other
+        ///words
+        ///could
+        ///write
+        ///first
+        ///water
+        ///after
+        ///where
+        ///right
+        ///think
+        ///three
+        ///years
+        ///place
+        ///sound
+        ///great
+        ///again
+        ///still
+        ///every
+        ///small
+        ///found
+        ///those
+        ///never
+        ///under
+        ///might
+        ///while
+        ///house
+        ///world
+        ///below
+        ///asked
+        ///going
+        ///large
+        ///until
+        ///along
+        ///shall
+        ///being
+        ///often
+        ///earth
+        ///began
+        ///since
+        ///study
+        ///night
+        ///light
+        ///above
+        ///paper
+        ///parts
+        ///young
+        ///story
+        ///point
+        ///times
+        ///heard
+        ///whole
+        ///white
+        ///given
+        ///means
+        ///music
+        ///miles
+        ///thing
+        ///today
+        ///later
+        ///using
+        ///money
+        ///lines
+        ///order
+        ///group
+        ///among
+        ///learn
+        ///known
+        ///s [rest of string was truncated]&quot;;.
+        /// </summary>
+        internal static string words {
+            get {
+                return ResourceManager.GetString("words", resourceCulture);
+            }
+        }
     }
 }

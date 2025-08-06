@@ -5,11 +5,18 @@
         private static Config config;
         private static Solver solver;
         private static Random random = new Random();
-        private static string[] WordList = Properties.Resources.WordList.Split("\n").Select(w => w.Trim().ToLower()).ToArray();
+        private static string[] WordList = Properties
+            .Resources.WordList.Split("\n")
+            .Select(w => w.Trim().ToLower())
+            .ToArray();
+        private static string[] WordListV2 = Properties
+            .Resources.words.Split("\n")
+            .Select(w => w.Trim().ToLower())
+            .ToArray();
         private static int failedWithinSix = 0;
         private static Dictionary<int, int> guessDistribution = new();
         private static int totalWords = WordList.Length;
-
+        private static int totalErrors = 0;
 
         static void Main(string[] args)
         {
@@ -18,50 +25,66 @@
             int totalGuesses = 0;
             long totalTimeMs = 0;
 
-            var wordsToTry = WordList.OrderBy(_ => random.Next()).Distinct().Take(totalWords).ToList();
-            string[] words =
-            {
-                "comfy",
-            };
+            var wordsToTry = WordList
+                .OrderBy(_ => random.Next())
+                .Distinct()
+                .Take(totalWords)
+                .ToList();
+            var wordsToTryV2 = WordListV2
+                .OrderBy(_ => random.Next())
+                .Distinct()
+                .Take(totalWords)
+                .ToList();
+            string[] words = { "apple" };
 
             // Testing as many as we want
-            totalWords = 100;
+            //totalWords = 5000;
 
             // Testing singluar word
             //totalWords = words.Length;
             //wordsToTry = words.ToList();
+
+            //Use V2 words.
+            wordsToTry = wordsToTryV2;
+            totalWords = WordListV2.Length;
 
             for (int i = 0; i < totalWords; i++)
             {
                 try
                 {
                     string word = wordsToTry[i];
-                    config = new Config(word, false);
-                    solver = new Solver(config);
-                    Console.WriteLine(
-                        "\U00002B1C = Not in word   \U0001F7E8 = Wrong position   \U0001F7E9 = Correct\n"
-                    );
-                    solver.SolveWordle();
-                    solvedCount++;
-                    int guesses = solver.Stats.TotalGuesses;
-                    if (guesses == 0)
+                    if (!String.IsNullOrEmpty(word))
                     {
-                        Console.WriteLine($"Warning: 0 guesses for word '{config.ActualWord}'.");
-                        continue;
+                        config = new Config(word, false);
+                        solver = new Solver(config);
+                        Console.WriteLine(
+                            "\U00002B1C = Not in word   \U0001F7E8 = Wrong position   \U0001F7E9 = Correct\n"
+                        );
+                        solver.SolveWordle();
+                        solvedCount++;
+                        int guesses = solver.Stats.TotalGuesses;
+                        if (guesses == 0)
+                        {
+                            Console.WriteLine(
+                                $"Warning: 0 guesses for word '{config.ActualWord}'."
+                            );
+                            continue;
+                        }
+
+                        totalGuesses += guesses;
+
+                        if (!guessDistribution.ContainsKey(guesses))
+                            guessDistribution[guesses] = 0;
+                        guessDistribution[guesses]++;
+
+                        totalTimeMs += solver.Stats.ElapsedMilliseconds;
+                        if (solver.Stats.FailedOnSixth)
+                            failedWithinSix++;
                     }
-
-                    totalGuesses += guesses;
-
-                    if (!guessDistribution.ContainsKey(guesses))
-                        guessDistribution[guesses] = 0;
-                    guessDistribution[guesses]++;
-
-                    totalTimeMs += solver.Stats.ElapsedMilliseconds;
-                    if (solver.Stats.FailedOnSixth)
-                        failedWithinSix++;
                 }
                 catch (Exception ex)
                 {
+                    totalErrors++;
                     Console.WriteLine($"Failed to solve: {config.ActualWord.ToUpper()}");
                     Console.WriteLine($"Reason: {ex.Message}");
                     Console.WriteLine("=====================");
@@ -71,16 +94,28 @@
             // Summary
             Console.WriteLine("\n========== Summary ==========");
             Console.WriteLine($"Total words attempted: \t\t\t{totalWords}");
-            Console.WriteLine($"Successfully solved: \t\t\t{totalWords - failedWithinSix} | {100 - (int)Math.Round((double)(100 * failedWithinSix) / totalWords)}%");
-            Console.WriteLine($"Failed to solve within 6 guesses: \t{failedWithinSix} | {(int)Math.Round((double)(100 * failedWithinSix) / totalWords)}%");
-            Console.WriteLine($"Average guesses per solved word: \t{(solvedCount == 0 ? 0 : (double)totalGuesses / solvedCount)}");
-            Console.WriteLine($"Average solve time: \t\t\t{(solvedCount == 0 ? 0 : (double)totalTimeMs / solvedCount):F0} ms");
+            Console.WriteLine(
+                $"Successfully solved: \t\t\t{totalWords - failedWithinSix} | {100 - (int)Math.Round((double)(100 * failedWithinSix) / totalWords)}%"
+            );
+            Console.WriteLine(
+                $"Failed to solve within 6 guesses: \t{failedWithinSix} | {(int)Math.Round((double)(100 * failedWithinSix) / totalWords)}%"
+            );
+            Console.WriteLine(
+                $"Average guesses per solved word: \t{(solvedCount == 0 ? 0 : (double)totalGuesses / solvedCount):F2}"
+            );
+            Console.WriteLine(
+                $"Average solve time: \t\t\t{(solvedCount == 0 ? 0 : (double)totalTimeMs / solvedCount):F0} ms"
+            );
             Console.WriteLine("\nGuess Distribution:");
             foreach (var kvp in guessDistribution.OrderBy(k => k.Key))
             {
-                Console.WriteLine($"{kvp.Key} Guess{(kvp.Key == 1 ? "" : "es")} -> {kvp.Value} time{(kvp.Value == 1 ? "" : "s")}");
+                Console.WriteLine(
+                    $"{kvp.Key} Guess{(kvp.Key == 1 ? "" : "es")} -> {kvp.Value} time{(kvp.Value == 1 ? "" : "s")}"
+                );
             }
             Console.WriteLine("=============================");
+
+            Console.WriteLine($"\n\n\n\nTotal Errors: {totalErrors}");
         }
     }
 }
