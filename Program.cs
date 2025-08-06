@@ -7,8 +7,9 @@
         private static Random random = new Random();
         private static string[] WordList = Properties.Resources.WordList.Split("\n").Select(w => w.Trim().ToLower()).ToArray();
         private static int failedWithinSix = 0;
-        private static int totalWords = WordList.Length - 1;
         private static Dictionary<int, int> guessDistribution = new();
+        private static int totalWords = WordList.Length;
+
 
         static void Main(string[] args)
         {
@@ -18,8 +19,19 @@
             long totalTimeMs = 0;
 
             var wordsToTry = WordList.OrderBy(_ => random.Next()).Distinct().Take(totalWords).ToList();
+            string[] words =
+            {
+                "comfy",
+            };
 
-            for (int i = 0; i < wordsToTry.Count; i++)
+            // Testing as many as we want
+            totalWords = 100;
+
+            // Testing singluar word
+            //totalWords = words.Length;
+            //wordsToTry = words.ToList();
+
+            for (int i = 0; i < totalWords; i++)
             {
                 try
                 {
@@ -59,9 +71,9 @@
             // Summary
             Console.WriteLine("\n========== Summary ==========");
             Console.WriteLine($"Total words attempted: \t\t\t{totalWords}");
-            Console.WriteLine($"Successfully solved: \t\t\t{solvedCount} | {(solvedCount / (double)totalWords) * 100:F0}%");
+            Console.WriteLine($"Successfully solved: \t\t\t{totalWords - failedWithinSix} | {100 - (int)Math.Round((double)(100 * failedWithinSix) / totalWords)}%");
             Console.WriteLine($"Failed to solve within 6 guesses: \t{failedWithinSix} | {(int)Math.Round((double)(100 * failedWithinSix) / totalWords)}%");
-            Console.WriteLine($"Average guesses per solved word: \t{(solvedCount == 0 ? 0 : (double)totalGuesses / solvedCount):F2}");
+            Console.WriteLine($"Average guesses per solved word: \t{(solvedCount == 0 ? 0 : (double)totalGuesses / solvedCount)}");
             Console.WriteLine($"Average solve time: \t\t\t{(solvedCount == 0 ? 0 : (double)totalTimeMs / solvedCount):F0} ms");
             Console.WriteLine("\nGuess Distribution:");
             foreach (var kvp in guessDistribution.OrderBy(k => k.Key))

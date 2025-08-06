@@ -8,17 +8,6 @@ namespace Temu_Wordle_Solver
         private readonly string[] _wordList = Properties.Resources.WordList.Split('\n');
         private readonly List<string> _usedWords = new();
         private readonly Random _random = new();
-        private readonly List<string> _bestStartingWords = new List<string>
-        {
-            "slate",
-            "crane",
-            "soare",
-            "raise",
-            "arise",
-            "audio",
-            "adieu",
-            "react",
-        };
 
         private Stopwatch _stopwatch = new Stopwatch();
         private int _totalWordsTried = 0;
@@ -47,15 +36,26 @@ namespace Temu_Wordle_Solver
             Console.WriteLine($"Actual word: {actualWord.ToUpper()}");
             Console.WriteLine(new string('=', 40));
 
-            Boolean isFirstGuess = true;
+            bool isFirstGuess = true;
+            string word = "";
+            LetterState[] firstGuessFeedback = null;
 
             while (!solved)
             {
-                string word;
                 if (isFirstGuess)
                 {
-                    word = _bestStartingWords[_random.Next(_bestStartingWords.Count)];
+                    word = "soare";
                     isFirstGuess = false;
+                }
+                else if (_totalWordsTried == 1)
+                {
+                    word = GetSecondWord(
+                        greens,
+                        yellowLetters,
+                        greyLetters,
+                        positionExclusions,
+                        firstGuessFeedback
+                    );
                 }
                 else
                 {
@@ -66,6 +66,14 @@ namespace Temu_Wordle_Solver
                 _totalWordsTried++;
 
                 var feedback = GetFeedback(word, actualWord);
+
+                if (_totalWordsTried == 1)
+                {
+                    firstGuessFeedback = feedback;
+                    int correctCount = feedback.Count(f =>
+                        f == LetterState.Yellow || f == LetterState.Green
+                    );
+                }
 
                 for (int i = 0; i < 5; i++)
                 {
@@ -105,7 +113,7 @@ namespace Temu_Wordle_Solver
                 if (word == actualWord)
                 {
                     _stopwatch.Stop();
-                    Stats.TotalGuesses = _usedWords.Count;
+                    Stats.TotalGuesses = _totalWordsTried;
                     Stats.ElapsedMilliseconds = _stopwatch.ElapsedMilliseconds;
 
                     Console.ForegroundColor = ConsoleColor.Green;
@@ -127,11 +135,37 @@ namespace Temu_Wordle_Solver
             Stats.FailedOnSixth = failedOnSixth;
         }
 
+        private string GetSecondWord(
+            char[] greens,
+            HashSet<char> yellowLetters,
+            HashSet<char> greyLetters,
+            Dictionary<int, HashSet<char>> positionExclusions,
+            LetterState[]? firstGuessFeedback
+        )
+        {
+            int correctLetterCount =
+                firstGuessFeedback != null
+                    ? firstGuessFeedback.Count(f =>
+                        f == LetterState.Yellow || f == LetterState.Green
+                    )
+                    : 0;
+
+
+            if (correctLetterCount >= 3)
+            {
+
+                return GetRandomWord(greens, yellowLetters, greyLetters, positionExclusions);
+            }
+
+            return "thumb";
+
+
+        }
+
         #region Display & UI
 
         private void PrintHeader(string title)
         {
-            Console.Clear();
             Console.ForegroundColor = ConsoleColor.Cyan;
             Console.WriteLine(new string('=', 40));
             Console.WriteLine(title.PadLeft((40 + title.Length) / 2).PadRight(40));
@@ -218,7 +252,7 @@ namespace Temu_Wordle_Solver
             return false;
         }
 
-        private LetterState[] GetFeedback(string guess, string actual)
+        private LetterState[] GetFeedback(string? guess, string actual)
         {
             LetterState[] feedback = new LetterState[5];
             Dictionary<char, int> actualCounts = CountLetters(actual);
@@ -274,21 +308,83 @@ namespace Temu_Wordle_Solver
                 )
                 .ToList();
 
+            if (_totalWordsTried >= 8 && filteredWords.Count == 0)
+            {
+                filteredWords = _wordList
+                    .Select(w => w.Trim().ToLower())
+                    .Where(w =>
+                        w.Length == 5
+                        && !_usedWords.Contains(w)
+                        && MatchesGreensAndYellows(w, greens, yellowLetters)
+                    )
+                    .ToList();
+            }
+
+            if (_totalWordsTried >= 10 && filteredWords.Count == 0)
+            {
+                // Last resort: Only avoid used words
+                filteredWords = _wordList
+                    .Select(w => w.Trim().ToLower())
+                    .Where(w => w.Length == 5 && !_usedWords.Contains(w))
+                    .ToList();
+            }
+
             if (filteredWords.Count == 0)
             {
-                Console.WriteLine("DEBUG: No valid words found!");
-                Console.WriteLine(
-                    $"Greens: {string.Join("", greens.Select(c => c == '\0' ? '_' : c))}"
-                );
-                Console.WriteLine($"Yellow letters: {string.Join(", ", yellowLetters)}");
-                Console.WriteLine($"Grey letters: {string.Join(", ", greyLetters)}");
-                Console.WriteLine($"Used words: {_usedWords.Count}");
                 throw new Exception("Temu Solver Got Stuck!");
             }
 
-            string word = filteredWords[_random.Next(filteredWords.Count)];
+            string word = filteredWords
+                .OrderByDescending(w => ScoreWord(w, yellowLetters, greens))
+                .First();
+
             _usedWords.Add(word);
             return word;
+        }
+
+        private bool MatchesGreensAndYellows(
+            string word,
+            char[] greens,
+            HashSet<char> yellowLetters
+        )
+        {
+            // Check greens
+            for (int i = 0; i < 5; i++)
+            {
+                if (greens[i] != '\0' && word[i] != greens[i])
+                    return false;
+            }
+
+            // Check yellows
+            foreach (char yellowChar in yellowLetters)
+            {
+                if (!word.Contains(yellowChar))
+                    return false;
+            }
+
+            return true;
+        }
+
+        private int ScoreWord(string word, HashSet<char> yellowLetters, char[] greens)
+        {
+            int score = 0;
+
+            for (int i = 0; i < 5; i++)
+            {
+                if (yellowLetters.Contains(word[i]) && greens[i] == '\0')
+                    score += 50; // Much higher bonus
+            }
+
+            if (yellowLetters.Count + greens.Count(c => c != '\0') < 3)
+            {
+                foreach (char c in "etaoinshrdlu")
+                {
+                    if (word.Contains(c))
+                        score += 1;
+                }
+            }
+
+            return score;
         }
 
         private bool MatchesConstraints(
@@ -322,8 +418,10 @@ namespace Temu_Wordle_Solver
                 int position = kvp.Key;
                 foreach (char excludedChar in kvp.Value)
                 {
-                    if (word[position] == excludedChar)
+                    if (position < word.Length && word[position] == excludedChar)
+                    {
                         return false;
+                    }
                 }
             }
 
