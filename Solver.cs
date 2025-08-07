@@ -114,7 +114,7 @@ namespace Temu_Wordle_Solver
                     }
                 }
 
-                //Display(feedback, word, _totalWordsTried);
+                Display(feedback, word, _totalWordsTried);
 
                 if (word == actualWord)
                 {

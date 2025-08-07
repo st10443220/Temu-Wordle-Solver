@@ -35,18 +35,18 @@
                 .Distinct()
                 .Take(totalWords)
                 .ToList();
-            string[] words = { "apple" };
+            string[] words = { "coral" };
 
             // Testing as many as we want
             //totalWords = 5000;
 
             // Testing singluar word
-            //totalWords = words.Length;
-            //wordsToTry = words.ToList();
+            totalWords = words.Length;
+            wordsToTry = words.ToList();
 
             //Use V2 words.
-            wordsToTry = wordsToTryV2;
-            totalWords = WordListV2.Length;
+            //wordsToTry = wordsToTryV2;
+            //totalWords = WordListV2.Length;
 
             for (int i = 0; i < totalWords; i++)
             {
