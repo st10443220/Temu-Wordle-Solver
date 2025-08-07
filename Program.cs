@@ -84,7 +84,7 @@
                 }
                 catch (Exception ex)
                 {
-                    totalErrors++;
+                    //totalErrors++;
                     Console.WriteLine($"Failed to solve: {config.ActualWord.ToUpper()}");
                     Console.WriteLine($"Reason: {ex.Message}");
                     Console.WriteLine("=====================");
@@ -115,7 +115,7 @@
             }
             Console.WriteLine("=============================");
 
-            Console.WriteLine($"\n\n\n\nTotal Errors: {totalErrors}");
+            //Console.WriteLine($"\n\n\n\nTotal Errors: {totalErrors}");
         }
     }
 }
